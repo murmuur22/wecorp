@@ -1,0 +1,83 @@
+{% macro photograph(photo, large=false) -%}
+<img src="/{{ photo.variants[-1 if large else 0].file }}" srcset="{% for variant in photo.variants %}/{{ variant.file }} {{ variant.width }}w{% if not loop.last %}, {% endif %}{% endfor %}" sizes="{% if large %}(max-width: 700px) 94vw, 1120px{% else %}(max-width: 620px) 94vw, (max-width: 960px) 46vw, 360px{% endif %}" width="{{ photo.width }}" height="{{ photo.height }}" alt="{{ photo.alt }}" loading="{% if large %}eager{% else %}lazy{% endif %}">
+{%- endmacro %}
+{% macro photo_grid(photos, limit=999) -%}
+<div class="photo-grid">
+{% for photo in photos[:limit] %}
+<a class="photo-card" href="/@{{ handle }}/gallery/{{ photo.id }}/">
+<div class="photo-frame">{{ photograph(photo) }}</div>
+<div class="caption"><span>{{ '%02d'|format(loop.index) }} / {{ photo.title }}</span><span>↗</span></div>
+</a>
+{% else %}<p class="muted">No published photographs yet.</p>{% endfor %}
+</div>
+{%- endmacro %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ title }} / {% if handle %}@{{ handle }} / {% endif %}WE CORP</title>
+<meta name="description" content="{{ subtitle }}">
+<link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/site.js" defer></script>
+</head>
+<body data-handle="{{ handle or '' }}" data-view="{{ view }}">
+<a class="skip" href="#content">Skip to content</a>
+<div class="shell">
+<header class="masthead"><a href="/" class="brand">WE CORP<span class="brand-sub">NETWORK / TERMINAL 01</span></a><div class="machine">PUBLIC / READ ONLY<br><span class="muted">{% if site.demo %}LOCAL PROTOTYPE{% else %}INDEPENDENT PUBLISHING{% endif %}</span></div></header>
+<div class="location"><span>wecorp.network{{ path }}</span><span class="muted">{{ 'MEMBER SPACE' if handle else 'PUBLIC COMMONS' }}</span></div>
+<nav aria-label="Main navigation">
+{% for n in nav %}<a href="{{ n.url }}" data-key="{{ n.key }}" data-command="{{ n.command }}" {% if n.active %}aria-current="page"{% endif %} aria-label="{{ n.label }}{% if n.key == '?' %}, shortcut question mark{% elif n.key == 'escape' %}, shortcut Escape{% else %}, shortcut {{ n.key }}{% endif %}">[<span class="hotkey">{{ n.label[0] }}</span>{{ n.label[1:] }}]{% if n.key in ('?', 'escape') %}<small>{{ n.letter }}</small>{% endif %}</a>{% endfor %}
+</nav>
+{% if site.demo %}<div class="demo">DEMONSTRATION / Sample copy and reference images. Not Robbie's finished portfolio.</div>{% endif %}
+<main id="content">
+{% if view == 'home' %}
+<section class="hero"><div class="eyebrow">01 / THE INVITATION</div><h1>{{ title }}</h1><div class="hero-bottom"><p>{{ site.intro or 'Technology should give you room to live.\nNot another company to live inside.' }}</p><pre class="network" aria-label="An interconnected network">    ○ ───── ○
+    │       │
+○ ── ● ──── ○ ── ○
+    │       │
+    ○ ───── ○</pre></div></section>
+<div class="section-heading"><span>02 / THE IDEA</span><span>OWN / SHARE / LEAVE</span></div>
+<div class="columns"><article class="prose">{{ html }}</article><aside class="terminal-note"><div class="eyebrow">NO EXPERT BADGE REQUIRED</div><p>Start with something useful.<br>Learn enough to make it yours.<br>Bring someone with you.</p><a href="/about/">[Read the idea] ↗</a></aside></div>
+<div class="section-heading"><span>03 / A WAY IN</span><span>PEOPLE BEFORE PLATFORMS</span></div>
+<p class="muted">Someone gave you an address? Enter their member handle below.</p>
+<form class="member-jump"><label for="handle">wecorp.network/@</label><input id="handle" name="handle" placeholder="your-contact" pattern="[a-z0-9][a-z0-9-]{0,47}" required autocomplete="off"><button>[Open]</button></form>
+{% elif view == 'portfolio' %}
+<section class="member-hero"><div><div class="eyebrow">01 / @{{ handle }} / {{ member.role }}</div><h1>{{ title }}</h1><article class="prose">{{ html }}</article></div><div class="id-card"><span class="eyebrow">MEMBER RECORD</span><strong>@{{ handle }}</strong><span>{{ member.role }}</span><span class="muted">{{ 'Listed in directory' if member.listed else 'Unlisted / public by address' }}</span><a href="/@{{ handle }}/contact/">[Contact] ↗</a></div></section>
+<div class="section-heading"><span>02 / SELECTED FRAMES</span><a href="/@{{ handle }}/gallery/">[Gallery] ↗</a></div>{{ photo_grid(photos, 3) }}
+<div class="section-heading"><span>03 / WORK & WORDS</span><span>MADE / NOT JUST IMAGINED</span></div>
+<div class="columns"><div>{% for entry in projects[:2] %}<a class="entry" href="{{ entry.url }}"><span class="muted">PROJECT / {{ entry.date }}</span><h2>{{ entry.title }}</h2><p>{{ entry.summary }}</p><span>[Open] ↗</span></a>{% else %}<p class="muted">Projects will appear here.</p>{% endfor %}</div><div>{% for entry in posts[:2] %}<a class="entry" href="{{ entry.url }}"><span class="muted">FIELD NOTE / {{ entry.date }}</span><h2>{{ entry.title }}</h2><p>{{ entry.summary }}</p><span>[Read] ↗</span></a>{% else %}<p class="muted">Notes will appear here.</p>{% endfor %}</div></div>
+{% elif view == 'gallery' %}
+<div class="page-title"><div class="eyebrow">01 / @{{ handle }} / PHOTOGRAPHY</div><h1>{{ title }}</h1><p class="muted">{{ photos|length }} published frames / original order controlled from the terminal</p></div>
+{{ photo_grid(photos) }}
+<div class="section-heading"><span>IMAGE NOTES</span><span>COLOR IS THE CONTENT</span></div><p class="muted">Open a frame for its caption and a larger view. Arrow keys move between frames.</p>
+{% elif view == 'photo' %}
+<div class="photo-title"><div><div class="eyebrow">FRAME / {{ item.id }}</div><h1>{{ item.title }}</h1></div><a href="/@{{ handle }}/gallery/">[Gallery] ↗</a></div>
+<figure class="single-photo">{{ photograph(item, true) }}<figcaption><span>{{ item.caption or item.alt }}</span><span class="muted">{{ item.width }} × {{ item.height }} / WEBP</span></figcaption></figure>
+<div class="photo-controls">{% if previous %}<a href="/@{{ handle }}/gallery/{{ previous }}/" data-arrow="left">[Previous] ←</a>{% endif %}{% if next %}<a href="/@{{ handle }}/gallery/{{ next }}/" data-arrow="right">[Next] →</a>{% endif %}</div>
+{% elif view in ('blog', 'work') %}
+<div class="page-title"><div class="eyebrow">01 / @{{ handle }} / {{ 'FIELD NOTES' if view == 'blog' else 'PROJECT INDEX' }}</div><h1>{{ title }}</h1><p class="muted">{{ 'Written in Markdown. Published on your own terms.' if view == 'blog' else 'Small tools. Real encounters. Work in progress.' }}</p></div>
+<div class="entry-list">{% for entry in (posts if view == 'blog' else projects) %}<a class="entry" href="{{ entry.url }}"><span class="entry-number">{{ '%02d'|format(loop.index) }}</span><div><span class="muted">{{ entry.date }}</span><h2>{{ entry.title }}</h2><p>{{ entry.summary }}</p></div><span>[Open] ↗</span></a>{% else %}<p class="muted">No published entries yet.</p>{% endfor %}</div>
+{% elif view in ('post', 'project') %}
+<div class="page-title article-title"><div class="eyebrow">{{ 'FIELD NOTE' if view == 'post' else 'PROJECT' }} / @{{ handle }} / {{ item.date }}</div><h1>{{ title }}</h1><p class="muted">{{ item.summary }}</p></div><article class="prose longform">{{ html }}</article><a class="return-link" href="/@{{ handle }}/{{ 'blog' if view == 'post' else 'work' }}/">[Return to index] ↗</a>
+{% elif view == 'contact' %}
+<div class="page-title"><div class="eyebrow">01 / @{{ handle }} / CONTACT</div><h1>{{ title }}</h1></div><div class="columns"><div class="prose"><p>No algorithm between us.</p><p>{{ member.contact or 'No public contact address has been set.' }}</p>{% if member.contact and '@' in member.contact %}<a href="mailto:{{ member.contact }}">[Email] ↗</a>{% endif %}</div><div class="id-card"><span class="eyebrow">YOUR TWO-SIDED CARD</span><strong>wecorp.network</strong><span>wecorp.network/@{{ handle }}</span><span class="muted">The idea on one side. A person on the other.</span></div></div>
+{% elif view == 'about' %}
+<div class="page-title"><div class="eyebrow">01 / THE IDEA</div><h1>{{ title }}</h1></div><article class="prose longform">{{ html }}<h2>Not a claim of total independence.</h2><p>This prototype still depends on hardware, software and networks made by others. The direction is greater agency: understandable tools, portable files and the ability to leave.</p><h2>A public front door, not a private network.</h2><p>This website is static. It doesn't enroll devices or grant access to Relay. Those are separate systems with separate permissions.</p></article>
+{% elif view == 'members' %}
+<div class="page-title"><div class="eyebrow">01 / DIRECTORY</div><h1>{{ title }}</h1><p class="muted">Only members who choose to be listed appear here. An unlisted address is still public.</p></div><div class="entry-list">{% for m in members if m.listed %}<a class="entry" href="/@{{ m.handle }}/"><div><h2>@{{ m.handle }}</h2><p>{{ m.role }}</p></div><span>[Open] ↗</span></a>{% else %}<p class="muted">No listed members yet. Use the address on your contact's card.</p>{% endfor %}</div>
+{% elif view == 'help' %}
+<div class="page-title"><div class="eyebrow">01 / HOW TO NAVIGATE</div><h1>{{ title }}</h1><p class="muted">A website and a terminal speaking the same language.</p></div>
+<div class="columns"><div><h2>Click a word. Or press its key.</h2><div class="key-list">{% for n in nav %}<div><kbd>{{ n.key }}</kbd><span>{{ n.label }}</span><span class="muted">{{ n.command }}</span></div>{% endfor %}</div><p class="muted">Shortcuts pause while you're typing. Browser shortcuts remain yours.</p></div><div class="terminal-note"><h2>Try a command</h2><pre>home
+member murmuur
+gallery
+blog
+work
+contact
+help
+open &lt;slug-or-photo-id&gt;</pre><p>The same navigation works in the real CLI. Editing commands exist only there.</p><p class="muted">Press / to focus the command line. Escape goes back.</p></div></div>
+{% endif %}
+</main>
+<form id="command-form" class="command-line" aria-label="Navigation command"><label for="command">we{% if handle %}:@{{ handle }}{% endif %} ›</label><input id="command" name="command" placeholder="type a command, or press /" autocomplete="off" spellcheck="false"><button>[Run]</button></form><p id="command-feedback" role="status" aria-live="polite"></p>
+<footer><span>WE CORP / {{ version }}</span><span>FILES, NOT FEEDS.</span><span>{{ 'DEMO CONTENT / LOCAL ONLY' if site.demo else 'YOUR ATTENTION IS YOURS.' }}</span></footer>
+</div>
+</body></html>

@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.pytest_cache/
+workspace/
+explorer-workspace/
+artifacts/
+demo-inputs/
+PROJECT_BRIEF.md
+VERIFICATION*.md
+.DS_Store

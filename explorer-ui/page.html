@@ -1,0 +1,38 @@
+{% macro children_tree(children) -%}
+{% for child in children %}{% if child.children %}<details><summary>{{ child.label }}</summary><div class="submenu nested"><a href="{{ child.url }}">[Enter {{ child.label }}]</a>{{ children_tree(child.children) }}</div></details>{% else %}<a href="{{ child.url }}">{{ child.label }}</a>{% endif %}{% endfor %}
+{%- endmacro %}
+{% macro token(item, navclass='') -%}
+{% if item.action is defined and item.action in ('help','raw','keys') %}
+<button class="token {{ navclass }}" data-key="{{ item.key }}" data-action="{{ item.action }}">[<b>{{ 'Esc' if item.key == 'escape' else item.key or '·' }}</b> {{ item.label }}]</button>
+{% elif item.children is defined and item.children %}
+<details class="directory-menu"><summary class="token {{ navclass }}" data-key="{{ item.key }}" data-url="{{ item.url }}">[<b>{{ item.key or '·' }}</b> {{ item.label }}]</summary><div class="submenu"><a class="token" href="{{ item.url }}">[Enter {{ item.label }}]</a>{{ children_tree(item.children) }}</div></details>
+{% else %}<a class="token {{ navclass }}" href="{{ item.url }}" data-key="{{ item.key }}" {% if item.action is defined %}data-action="{{ item.action }}"{% endif %}>[<b>{{ 'Esc' if item.key == 'escape' else item.key or '·' }}</b> {{ item.label }}]</a>{% endif %}
+{%- endmacro %}
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ title }} / WE CORP</title><link rel="stylesheet" href="/_ui/explorer.css"><script src="/_ui/explorer.js" defer></script></head>
+<body>
+<a class="skip" href="#document">Skip to document</a>
+<div class="terminal">
+<div class="identity"><span>{{ brand }} / DOCUMENT TERMINAL</span><span>DEMO / LOCAL</span></div>
+<div class="rule"></div>
+<header id="header-bar"><div class="address">wecorp.network{{ url }}</div><nav class="tokens" aria-label="Pinned navigation">{% for item in controls + pins %}{{ token(item, 'header-token') }}{% endfor %}</nav></header>
+<div class="rule"></div>
+<section id="directory-bar" aria-label="Current directory"><div class="location">ls /{% if directory != '.' %}{{ directory }}/{% endif %}</div><div class="tokens directory-items">{% for item in entries %}{{ token(item, 'entry-token') }}{% else %}<span class="muted">(no listed documents)</span>{% endfor %}</div></section>
+<div class="rule"></div>
+<div class="document-label"><span>cat {{ source }}</span><span id="mode-label">HTML</span></div>
+<main id="document" tabindex="-1"><article class="markdown">{{ rendered }}</article><pre class="raw" hidden>{{ body }}</pre></main>
+<div class="rule"></div>
+<form id="command-form" class="prompt"><label for="command">we:{{ url }} ›</label><input id="command" name="command" placeholder="/ command · arrows select · Enter opens" autocomplete="off" spellcheck="false"><button>[Run]</button></form>
+<div id="feedback" class="muted" role="status" aria-live="polite"></div>
+<div class="rule"></div>
+<footer><span>WE CORP / {{ version }} / FILES, NOT FEEDS.</span><span>REFERENCE CONTENT / NOT A FINISHED PORTFOLIO</span></footer>
+</div>
+<dialog id="help"><div class="dialog-heading">KEYBOARD / SAME WORDS IN BOTH INTERFACES <button data-close="help">[Close]</button></div><p>Single keys open the displayed item. Keys are assigned across both bars without collisions.</p><dl><dt>↑ ↓ ← →</dt><dd>Select a directory entry; Right opens its submenu.</dd><dt>Enter</dt><dd>Open the selected file or folder.</dd><dt>h / u / Escape</dt><dd>Home / parent directory / previously visited page.</dd><dt>r / k / ?</dt><dd>Raw Markdown / toggle single-key shortcuts / this help.</dd><dt>/</dt><dd>Focus the command line. Typing never triggers shortcuts.</dd></dl><pre>ls
+cd photography
+open city-at-night.md
+cd ..
+home
+help</pre><p>When there are more entries than available keys, arrows and Enter still work. Assignments may change when the directory changes. Tab navigation always remains available.</p><p class="muted">Public commands navigate only. Editing and publishing happen in your actual terminal.</p></dialog>
+<dialog id="viewer" aria-label="Image viewer"><div class="dialog-heading"><span id="image-position"></span><button data-close="viewer">[Close / Esc]</button></div><img id="viewer-image" alt=""><div id="image-caption"></div><div class="viewer-controls"><button id="previous-image">[Previous / ←]</button><button id="next-image">[Next / →]</button></div></dialog>
+<script id="page-model" type="application/json">{{ payload|tojson }}</script>
+</body></html>
